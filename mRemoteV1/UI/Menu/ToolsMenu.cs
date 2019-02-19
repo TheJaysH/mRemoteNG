@@ -10,6 +10,7 @@ namespace mRemoteNG.UI.Menu
         private ToolStripSeparator _mMenToolsSep1;
         private ToolStripMenuItem _mMenToolsOptions;
         private ToolStripMenuItem _mMenToolsSshTransfer;
+        private ToolStripMenuItem _mMenSFTPBrowser;
         private ToolStripMenuItem _mMenToolsExternalApps;
         private ToolStripMenuItem _mMenToolsPortScan;
         private ToolStripMenuItem _mMenToolsUvncsc;
@@ -27,6 +28,7 @@ namespace mRemoteNG.UI.Menu
         private void Initialize()
         {
             _mMenToolsSshTransfer = new ToolStripMenuItem();
+            _mMenSFTPBrowser = new ToolStripMenuItem();
             _mMenToolsUvncsc = new ToolStripMenuItem();
             _mMenToolsExternalApps = new ToolStripMenuItem();
             _mMenToolsPortScan = new ToolStripMenuItem();
@@ -40,6 +42,7 @@ namespace mRemoteNG.UI.Menu
             DropDownItems.AddRange(new ToolStripItem[]
             {
                 _mMenToolsSshTransfer,
+                _mMenSFTPBrowser,
                 _mMenToolsUvncsc,
                 _mMenToolsExternalApps,
                 _mMenToolsPortScan,
@@ -51,6 +54,14 @@ namespace mRemoteNG.UI.Menu
             Name = "mMenTools";
             Size = new System.Drawing.Size(48, 20);
             Text = Language.strMenuTools;
+            // 
+            // mMenSFTPBrowser
+            //
+            _mMenSFTPBrowser.Image = Resources.Folder;
+            _mMenSFTPBrowser.Name = "mMenSFTPBrowser";
+            _mMenSFTPBrowser.Size = new System.Drawing.Size(184, 22);
+            _mMenSFTPBrowser.Text = Language.strMenuSFTPBrowser;
+            _mMenSFTPBrowser.Click += mMenSFTPBrowser_Click;
             // 
             // mMenToolsSSHTransfer
             // 
@@ -115,6 +126,7 @@ namespace mRemoteNG.UI.Menu
             _mMenToolsOptions.Click += mMenToolsOptions_Click;
         }
 
+       
         public void ApplyLanguage()
         {
             Text = Language.strMenuTools;
@@ -127,6 +139,12 @@ namespace mRemoteNG.UI.Menu
         }
 
         #region Tools
+
+        private void mMenSFTPBrowser_Click(object sender, EventArgs e)
+        {
+            Windows.Show(WindowType.SFTPBrowser);
+        }
+
 
         private void mMenToolsSSHTransfer_Click(object sender, EventArgs e)
         {

@@ -120,6 +120,9 @@
   <data name="PlaceSearchBarAboveConnectionTree" xml:space="preserve">
     <value>Place search bar above connection tree</value>
   </data>
+  <data name="strMenuSFTPBrowser" xml:space="preserve">
+    <value>SFTP Browser</value>
+  </data>
   <data name="strPropertyDescriptionColors" xml:space="preserve">
     <value>Select the color quality to be used.</value>
   </data>

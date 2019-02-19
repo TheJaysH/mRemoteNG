@@ -35,6 +35,11 @@ namespace mRemoteNG.Tools
             Protocol = protocol;
         }
 
+        public SftpClient GetSftpClient()
+        {
+            return new SftpClient(Host, Port, User, Password);
+        }
+
         public SecureTransfer(string host,
                               string user,
                               string pass,

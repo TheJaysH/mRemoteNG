@@ -337,6 +337,7 @@
     <Compile Include="Tools\MultiSSHController.cs" />
     <Compile Include="Tools\MouseClickSimulator.cs" />
     <Compile Include="Tools\NotificationAreaIcon.cs" />
+    <Compile Include="Tools\SFTPBrowser.cs" />
     <Compile Include="Tools\WindowsRegistry\IRegistry.cs" />
     <Compile Include="Tools\WindowsRegistry\RegistryHive.cs" />
     <Compile Include="Tools\WindowsRegistry\WindowsRegistry.cs" />
@@ -770,6 +771,12 @@
     <Compile Include="UI\Window\ScreenshotManagerWindow.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="UI\Window\SFTPBrowserWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\Window\SFTPBrowserWindow.Designer.cs">
+      <DependentUpon>SFTPBrowserWindow.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\Window\SSHTransferWindow.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -1043,6 +1050,9 @@
     <EmbeddedResource Include="UI\Window\ScreenshotManagerWindow.resx">
       <DependentUpon>ScreenshotManagerWindow.cs</DependentUpon>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\Window\SFTPBrowserWindow.resx">
+      <DependentUpon>SFTPBrowserWindow.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\Window\SSHTransferWindow.resx">
       <DependentUpon>SSHTransferWindow.cs</DependentUpon>

@@ -29,6 +29,7 @@ namespace mRemoteNG.App
         internal static ScreenshotManagerWindow ScreenshotForm { get; set; } = new ScreenshotManagerWindow();
         private static UpdateWindow UpdateForm { get; set; } = new UpdateWindow();
         internal static SSHTransferWindow SshtransferForm { get; private set; } = new SSHTransferWindow();
+        internal static SFTPBrowserWindow SFTPBrowserForm { get; private set; } = new SFTPBrowserWindow();
 
 
         public static void Show(WindowType windowType)
@@ -55,6 +56,12 @@ namespace mRemoteNG.App
                             optionsForm.ShowDialog(dockPanel);
                         }
 
+                        break;
+
+                    case WindowType.SFTPBrowser:
+                        if (SFTPBrowserForm == null || SFTPBrowserForm.IsDisposed)
+                            SFTPBrowserForm = new SFTPBrowserWindow();
+                        SFTPBrowserForm.Show(dockPanel);
                         break;
                     case WindowType.SSHTransfer:
                         if (SshtransferForm == null || SshtransferForm.IsDisposed)

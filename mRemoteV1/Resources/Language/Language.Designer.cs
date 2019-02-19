@@ -3928,7 +3928,18 @@ namespace mRemoteNG {
                 return ResourceManager.GetString("strMenuSSHFileTransfer", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized string similar to SFTP Browser.
+        /// </summary>
+        internal static string strMenuSFTPBrowser
+        {
+            get
+            {
+                return ResourceManager.GetString("strMenuSFTPBrowser", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Start Chat (VNC).
         /// </summary>
