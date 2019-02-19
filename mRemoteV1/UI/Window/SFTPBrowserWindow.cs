@@ -18,8 +18,6 @@ namespace mRemoteNG.UI.Window
 {
     public partial class SFTPBrowserWindow : BaseWindow
     {
-
-
         private string Host { get => ngTextBoxHost.Text; }
         private string Username { get => ngTextBoxUsername.Text; }
         private string Password { get => ngTextBoxPassword.Text; }
@@ -43,7 +41,6 @@ namespace mRemoteNG.UI.Window
             set => ngTextBoxLocalDirectory.Text = value;
         }
 
-
         public SFTPBrowserWindow()
         {
             InitializeComponent();
@@ -61,6 +58,31 @@ namespace mRemoteNG.UI.Window
 
             ngListViewFiles.DoubleClick += NgListViewFiles_DoubleClick;
         }
+
+        #region Misc Methods
+
+        private bool CheckControls()
+        {
+            // TODO Check each of the controls
+            return true;
+        }
+
+        private void ApplyLanguage()
+        {
+            // TODO
+        }
+
+        #endregion
+
+        #region Form Events
+
+        private void SFTPBrowserWindow_Load(object sender, EventArgs e)
+        {
+            ApplyTheme();
+            ApplyLanguage();
+            var display = new DisplayProperties();
+        }
+
 
         private void NgListViewProgress_ModelCanDrop(object sender, ModelDropEventArgs e)
         {
@@ -91,10 +113,12 @@ namespace mRemoteNG.UI.Window
 
                 if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(browser.SelectedPath))
                 {
-                    LocalDirectory = browser.SelectedPath;                   
+                    LocalDirectory = browser.SelectedPath;
                 }
             }
         }
+
+
 
         private void NgListViewFiles_DoubleClick(object sender, EventArgs e)
         {
@@ -114,7 +138,41 @@ namespace mRemoteNG.UI.Window
                 else
                     DownloadFile(oRow.File);
             }
-                   
+
+        }
+
+        private void NgButtonConnect_Click(object sender, EventArgs e)
+        {
+            if (!CheckControls()) return;
+
+            Connect();
+
+            ChangeDirectory(HomeDirectory);
+        }
+
+        #endregion
+
+        #region SFTP Methods
+        public void Connect()
+        {
+            Client = new SftpClient(GetConnectionInfo());
+
+            try
+            {
+                Client.Connect();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to connect: " + ex.Message,
+                    "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        public ConnectionInfo GetConnectionInfo()
+        {
+            return new ConnectionInfo(Host, Port, Username, new AuthenticationMethod[]{
+                new PasswordAuthenticationMethod(Username,Password)
+            });
         }
 
         public async void DownloadFile(SftpFile file)
@@ -130,7 +188,7 @@ namespace mRemoteNG.UI.Window
                     ProgressRow progressRow = new ProgressRow(file.Name, "Waiting");
                     ngListViewProgress.AddObject(progressRow);
 
-                  
+
 
                     IAsyncResult result = Client.BeginDownloadFile(file.FullName, SourceStream, AsyncDownloadCallback, progressRow);
 
@@ -149,51 +207,6 @@ namespace mRemoteNG.UI.Window
 
         }
 
-        private void AsyncDownloadCallback(IAsyncResult asyncResult)
-        {
-            var result = (SftpDownloadAsyncResult)asyncResult;
-
-            Debug.WriteLine(result.DownloadedBytes);
-        }
-
-       
-        private void SFTPBrowserWindow_Load(object sender, EventArgs e)
-        {
-            ApplyTheme();
-            ApplyLanguage();
-            var display = new DisplayProperties();
-        }
-
-        private void NgButtonConnect_Click(object sender, EventArgs e)
-        {
-            if (!CheckControls()) return;
-
-            Connect();
-
-            ChangeDirectory(HomeDirectory);
-        }
-
-        public ConnectionInfo GetConnectionInfo()
-        {
-            return new ConnectionInfo(Host, Port, Username, new AuthenticationMethod[]{
-                new PasswordAuthenticationMethod(Username,Password)
-            });
-        }
-
-        public void Connect()
-        {
-            Client = new SftpClient(GetConnectionInfo());
-
-            try
-            {
-                Client.Connect();
-            }
-            catch (Exception)
-            {               
-                throw;
-            }           
-        }
-
         public void ChangeDirectory(string path)
         {
             IAsyncResult sftp = Client.BeginListDirectory(path, AsyncListDirectoryCallback, null);
@@ -207,7 +220,7 @@ namespace mRemoteNG.UI.Window
             List<FileRow> rows = new List<FileRow>();
 
             foreach (var file in results)
-            {               
+            {
                 FileRow fileRow = new FileRow(file);
                 rows.Add(fileRow);
 
@@ -220,23 +233,23 @@ namespace mRemoteNG.UI.Window
             ngListViewFiles.SetObjects(rows.OrderBy(r => r.Name));
         }
 
-      
-
+        #region Async Callbacks
         private void AsyncListDirectoryCallback(IAsyncResult state)
         {
             // TODO
         }
 
-        private bool CheckControls()
+        private void AsyncDownloadCallback(IAsyncResult asyncResult)
         {
-            // TODO Check each of the controls
-            return true;
+            var result = (SftpDownloadAsyncResult)asyncResult;
+
+            Debug.WriteLine(result.DownloadedBytes);
         }
 
-        private void ApplyLanguage()
-        {
-            // grpFiles.Text = Language.strGroupboxFiles;
-        }
+
+        #endregion
+
+        #endregion
 
         public class ProgressRow : INotifyPropertyChanged
         {
@@ -245,10 +258,7 @@ namespace mRemoteNG.UI.Window
             public string Name { get; set; }
             public string Status
             {
-                get
-                {
-                    return this._Status;
-                }
+                get => this._Status;
                 set
                 {
                     if (value != this._Status)
@@ -261,18 +271,12 @@ namespace mRemoteNG.UI.Window
 
             public event PropertyChangedEventHandler PropertyChanged;
 
-
             public Image Icon { get; set; }
-
-            public ProgressRow()
-            {
-            }
-
+          
             public ProgressRow(string Name, string Status, bool IsDownload = true)
             {
                 this.Name = Name;
                 this._Status = Status;
-
                 this.Icon = (IsDownload) ? Resources.Arrow_Down : Resources.Arrow_Up;
             }
 

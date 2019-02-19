@@ -41,7 +41,6 @@
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.helpToolStripButton = new System.Windows.Forms.ToolStripButton();
             this.ngTextBoxCurrentDirectory = new mRemoteNG.UI.Controls.Base.NGTextBox();
-            this.splitContainerMain = new System.Windows.Forms.SplitContainer();
             this.ngListViewFiles = new mRemoteNG.UI.Controls.Base.NGListView();
             this.olvColumn1 = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.olvColumn2 = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
@@ -53,11 +52,12 @@
             this.olvColumn_File = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.olvColumn_Status = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.splitContainer2 = new System.Windows.Forms.SplitContainer();
+            this.ngButtonConnect = new mRemoteNG.UI.Controls.Base.NGButton();
             this.ngGroupBox1 = new mRemoteNG.UI.Controls.Base.NGGroupBox();
             this.ngButtonBrowse = new mRemoteNG.UI.Controls.Base.NGButton();
             this.ngTextBoxLocalDirectory = new mRemoteNG.UI.Controls.Base.NGTextBox();
             this.ngLabel1 = new mRemoteNG.UI.Controls.Base.NGLabel();
-            this.ngButtonConnect = new mRemoteNG.UI.Controls.Base.NGButton();
             this.ngGroupBoxCredentials = new mRemoteNG.UI.Controls.Base.NGGroupBox();
             this.ngTextBoxPassword = new mRemoteNG.UI.Controls.Base.NGTextBox();
             this.ngTextBoxUsername = new mRemoteNG.UI.Controls.Base.NGTextBox();
@@ -69,16 +69,16 @@
             this.ngTextBoxHost = new mRemoteNG.UI.Controls.Base.NGTextBox();
             this.ngLabelServer = new mRemoteNG.UI.Controls.Base.NGLabel();
             this.toolStrip1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainerMain)).BeginInit();
-            this.splitContainerMain.Panel1.SuspendLayout();
-            this.splitContainerMain.Panel2.SuspendLayout();
-            this.splitContainerMain.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.ngListViewFiles)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.ngListViewProgress)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
+            this.splitContainer2.Panel1.SuspendLayout();
+            this.splitContainer2.Panel2.SuspendLayout();
+            this.splitContainer2.SuspendLayout();
             this.ngGroupBox1.SuspendLayout();
             this.ngGroupBoxCredentials.SuspendLayout();
             this.ngGroupBoxSftpConnection.SuspendLayout();
@@ -195,26 +195,6 @@
             this.ngTextBoxCurrentDirectory.Size = new System.Drawing.Size(697, 22);
             this.ngTextBoxCurrentDirectory.TabIndex = 1;
             // 
-            // splitContainerMain
-            // 
-            this.splitContainerMain.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainerMain.Location = new System.Drawing.Point(0, 0);
-            this.splitContainerMain.Name = "splitContainerMain";
-            this.splitContainerMain.Orientation = System.Windows.Forms.Orientation.Horizontal;
-            // 
-            // splitContainerMain.Panel1
-            // 
-            this.splitContainerMain.Panel1.Controls.Add(this.ngListViewFiles);
-            this.splitContainerMain.Panel1.Controls.Add(this.ngTextBoxCurrentDirectory);
-            this.splitContainerMain.Panel1.Controls.Add(this.toolStrip1);
-            // 
-            // splitContainerMain.Panel2
-            // 
-            this.splitContainerMain.Panel2.Controls.Add(this.ngListViewProgress);
-            this.splitContainerMain.Size = new System.Drawing.Size(697, 441);
-            this.splitContainerMain.SplitterDistance = 360;
-            this.splitContainerMain.TabIndex = 2;
-            // 
             // ngListViewFiles
             // 
             this.ngListViewFiles.AllColumns.Add(this.olvColumn1);
@@ -238,7 +218,7 @@
             this.ngListViewFiles.Location = new System.Drawing.Point(0, 47);
             this.ngListViewFiles.Name = "ngListViewFiles";
             this.ngListViewFiles.ShowGroups = false;
-            this.ngListViewFiles.Size = new System.Drawing.Size(697, 313);
+            this.ngListViewFiles.Size = new System.Drawing.Size(697, 394);
             this.ngListViewFiles.TabIndex = 0;
             this.ngListViewFiles.UseCompatibleStateImageBehavior = false;
             this.ngListViewFiles.View = System.Windows.Forms.View.Details;
@@ -292,7 +272,7 @@
             this.ngListViewProgress.Location = new System.Drawing.Point(0, 0);
             this.ngListViewProgress.Name = "ngListViewProgress";
             this.ngListViewProgress.ShowGroups = false;
-            this.ngListViewProgress.Size = new System.Drawing.Size(697, 77);
+            this.ngListViewProgress.Size = new System.Drawing.Size(259, 180);
             this.ngListViewProgress.TabIndex = 0;
             this.ngListViewProgress.UseCompatibleStateImageBehavior = false;
             this.ngListViewProgress.View = System.Windows.Forms.View.Details;
@@ -302,13 +282,13 @@
             this.olvColumn_File.AspectName = "Name";
             this.olvColumn_File.ImageAspectName = "Icon";
             this.olvColumn_File.Text = "File";
-            this.olvColumn_File.Width = 221;
+            this.olvColumn_File.Width = 149;
             // 
             // olvColumn_Status
             // 
             this.olvColumn_Status.AspectName = "Status";
             this.olvColumn_Status.Text = "Status";
-            this.olvColumn_Status.Width = 188;
+            this.olvColumn_Status.Width = 99;
             // 
             // splitContainer1
             // 
@@ -318,17 +298,50 @@
             // 
             // splitContainer1.Panel1
             // 
-            this.splitContainer1.Panel1.Controls.Add(this.ngGroupBox1);
-            this.splitContainer1.Panel1.Controls.Add(this.ngButtonConnect);
-            this.splitContainer1.Panel1.Controls.Add(this.ngGroupBoxCredentials);
-            this.splitContainer1.Panel1.Controls.Add(this.ngGroupBoxSftpConnection);
+            this.splitContainer1.Panel1.Controls.Add(this.splitContainer2);
             // 
             // splitContainer1.Panel2
             // 
-            this.splitContainer1.Panel2.Controls.Add(this.splitContainerMain);
+            this.splitContainer1.Panel2.Controls.Add(this.ngListViewFiles);
+            this.splitContainer1.Panel2.Controls.Add(this.ngTextBoxCurrentDirectory);
+            this.splitContainer1.Panel2.Controls.Add(this.toolStrip1);
             this.splitContainer1.Size = new System.Drawing.Size(960, 441);
             this.splitContainer1.SplitterDistance = 259;
             this.splitContainer1.TabIndex = 1;
+            // 
+            // splitContainer2
+            // 
+            this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer2.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
+            this.splitContainer2.IsSplitterFixed = true;
+            this.splitContainer2.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer2.Name = "splitContainer2";
+            this.splitContainer2.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
+            // splitContainer2.Panel1
+            // 
+            this.splitContainer2.Panel1.Controls.Add(this.ngButtonConnect);
+            this.splitContainer2.Panel1.Controls.Add(this.ngGroupBox1);
+            this.splitContainer2.Panel1.Controls.Add(this.ngGroupBoxCredentials);
+            this.splitContainer2.Panel1.Controls.Add(this.ngGroupBoxSftpConnection);
+            // 
+            // splitContainer2.Panel2
+            // 
+            this.splitContainer2.Panel2.Controls.Add(this.ngListViewProgress);
+            this.splitContainer2.Size = new System.Drawing.Size(259, 441);
+            this.splitContainer2.SplitterDistance = 257;
+            this.splitContainer2.TabIndex = 4;
+            // 
+            // ngButtonConnect
+            // 
+            this.ngButtonConnect._mice = mRemoteNG.UI.Controls.Base.NGButton.MouseState.OUT;
+            this.ngButtonConnect.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.ngButtonConnect.Location = new System.Drawing.Point(178, 231);
+            this.ngButtonConnect.Name = "ngButtonConnect";
+            this.ngButtonConnect.Size = new System.Drawing.Size(75, 23);
+            this.ngButtonConnect.TabIndex = 2;
+            this.ngButtonConnect.Text = "Connect";
+            this.ngButtonConnect.UseVisualStyleBackColor = true;
             // 
             // ngGroupBox1
             // 
@@ -373,17 +386,6 @@
             this.ngLabel1.Size = new System.Drawing.Size(29, 13);
             this.ngLabel1.TabIndex = 0;
             this.ngLabel1.Text = "Path";
-            // 
-            // ngButtonConnect
-            // 
-            this.ngButtonConnect._mice = mRemoteNG.UI.Controls.Base.NGButton.MouseState.OUT;
-            this.ngButtonConnect.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.ngButtonConnect.Location = new System.Drawing.Point(178, 233);
-            this.ngButtonConnect.Name = "ngButtonConnect";
-            this.ngButtonConnect.Size = new System.Drawing.Size(75, 23);
-            this.ngButtonConnect.TabIndex = 2;
-            this.ngButtonConnect.Text = "Connect";
-            this.ngButtonConnect.UseVisualStyleBackColor = true;
             // 
             // ngGroupBoxCredentials
             // 
@@ -501,17 +503,17 @@
             this.Load += new System.EventHandler(this.SFTPBrowserWindow_Load);
             this.toolStrip1.ResumeLayout(false);
             this.toolStrip1.PerformLayout();
-            this.splitContainerMain.Panel1.ResumeLayout(false);
-            this.splitContainerMain.Panel1.PerformLayout();
-            this.splitContainerMain.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainerMain)).EndInit();
-            this.splitContainerMain.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.ngListViewFiles)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.ngListViewProgress)).EndInit();
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
+            this.splitContainer1.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
             this.splitContainer1.ResumeLayout(false);
+            this.splitContainer2.Panel1.ResumeLayout(false);
+            this.splitContainer2.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
+            this.splitContainer2.ResumeLayout(false);
             this.ngGroupBox1.ResumeLayout(false);
             this.ngGroupBox1.PerformLayout();
             this.ngGroupBoxCredentials.ResumeLayout(false);
@@ -536,7 +538,6 @@
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripButton helpToolStripButton;
         private Controls.Base.NGTextBox ngTextBoxCurrentDirectory;
-        private System.Windows.Forms.SplitContainer splitContainerMain;
         private Controls.Base.NGListView ngListViewFiles;
         private BrightIdeasSoftware.OLVColumn olvColumn1;
         private BrightIdeasSoftware.OLVColumn olvColumn2;
@@ -563,5 +564,6 @@
         private Controls.Base.NGTextBox ngTextBoxLocalDirectory;
         private Controls.Base.NGLabel ngLabel1;
         private BrightIdeasSoftware.OLVColumn olvColumn_Status;
+        private System.Windows.Forms.SplitContainer splitContainer2;
     }
 }
