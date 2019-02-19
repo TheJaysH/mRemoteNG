@@ -18,6 +18,22 @@ namespace mRemoteNG.UI.Window
 {
     public partial class SFTPBrowserWindow : BaseWindow
     {
+        /*
+         *  TODO:
+         *      - File Upload
+         *      - Drag & Drop (Upload/Download)
+         *      - Port Logic into it's own class
+         *      - Use Credential manager
+         *      - Add support for KeyAuth
+         *      - Conext Menu's
+         *      - Empty Task List
+         *      - Overwrite dialog
+         *
+         *  BONUS:
+         *      - Report Download/Upload Progress %
+         *      
+         * */
+
         private string Host { get => ngTextBoxHost.Text; }
         private string Username { get => ngTextBoxUsername.Text; }
         private string Password { get => ngTextBoxPassword.Text; }
