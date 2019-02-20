@@ -1,12 +1,13 @@
 ﻿using System;
+using System.Drawing;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -26,8 +27,7 @@ namespace mRemoteNG.UI.Window
          *      - Use Credential manager
          *      - Add support for KeyAuth
          *      - Conext Menu's
-         *      - Empty Task List
-         *      - Overwrite dialog
+         *      - Overwrite dialog (kinda done)
          *
          *  BONUS:
          *      - Report Download/Upload Progress %
@@ -41,9 +41,7 @@ namespace mRemoteNG.UI.Window
 
         private string HomeDirectory { get => $"/home/{Username}"; }
 
-        public SftpClient Client;
-
-        private List<Task> Tasks { get; set; }
+        public SftpClient Client { get; set; }
 
         public string CurrentDirectory
         {
@@ -62,17 +60,39 @@ namespace mRemoteNG.UI.Window
             InitializeComponent();
 
             AllowDrop = true;
-
+       
             ngListViewFiles.AllowDrop = true;
             ngListViewFiles.IsSimpleDragSource = true;
             ngListViewFiles.IsSimpleDropSink = true;
             ngListViewProgress.UseNotifyPropertyChanged = true;
+
             ngListViewProgress.ModelCanDrop += NgListViewProgress_ModelCanDrop;
+            ngListViewFiles.DoubleClick += NgListViewFiles_DoubleClick;
+
+            ngListViewProgress.DoubleClick += NgListViewProgress_DoubleClick;
 
             ngButtonConnect.Click += NgButtonConnect_Click;
             ngButtonBrowse.Click += NgButtonBrowse_Click;
 
-            ngListViewFiles.DoubleClick += NgListViewFiles_DoubleClick;
+        }
+
+        private void NgListViewProgress_DoubleClick(object sender, EventArgs e)
+        {
+            ObjectListView objectList = (ObjectListView)sender;
+
+            ProgressRow oRow = (ProgressRow)objectList.SelectedItem.RowObject;
+
+            if (!File.Exists(oRow.Path)) return;
+
+            try
+            {
+                Process.Start(oRow.Path);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to open file. " + ex.Message,
+                      "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         #region Misc Methods
@@ -135,7 +155,6 @@ namespace mRemoteNG.UI.Window
         }
 
 
-
         private void NgListViewFiles_DoubleClick(object sender, EventArgs e)
         {
             ObjectListView objectList = (ObjectListView)sender;
@@ -161,7 +180,7 @@ namespace mRemoteNG.UI.Window
         {
             if (!CheckControls()) return;
 
-            Connect();
+            if (!Connect()) return;
 
             ChangeDirectory(HomeDirectory);
         }
@@ -169,18 +188,20 @@ namespace mRemoteNG.UI.Window
         #endregion
 
         #region SFTP Methods
-        public void Connect()
+        public bool Connect()
         {
             Client = new SftpClient(GetConnectionInfo());
 
             try
             {
                 Client.Connect();
+                return true;
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Failed to connect: " + ex.Message,
                     "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
             }
         }
 
@@ -193,42 +214,56 @@ namespace mRemoteNG.UI.Window
 
         public async void DownloadFile(SftpFile file)
         {
-            if (Tasks is null) Tasks = new List<Task>();
+            string dest = $"{LocalDirectory}\\{file.Name}";
+            ProgressRow progressRow = null;
 
             try
             {
-                var dest = $"{LocalDirectory}\\{file.Name}";
-
-                using (FileStream SourceStream = File.Open(dest, FileMode.CreateNew, FileAccess.Write))
+                if (File.Exists(dest))
                 {
-                    ProgressRow progressRow = new ProgressRow(file.Name, "Waiting");
+                    DialogResult result = MessageBox.Show("The file you are downloading already exists. Do you wish to overwrite?",
+                        "File Exists", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+
+                    // TODO Rename the file { File.ext => File (1).ext }
+
+                    if (result != DialogResult.Yes) return;
+                }
+
+                using (FileStream SourceStream = File.Open(dest, FileMode.Create, FileAccess.Write))
+                {
+                    progressRow = new ProgressRow(dest, ProgressRow.StatusType.Waiting);
+
                     ngListViewProgress.AddObject(progressRow);
-
-
 
                     IAsyncResult result = Client.BeginDownloadFile(file.FullName, SourceStream, AsyncDownloadCallback, progressRow);
 
-                    progressRow.Status = "Downloading";
+                    progressRow.Status = ProgressRow.StatusType.Downloading;
 
                     await Task.Factory.FromAsync(result, Client.EndDownloadFile);
 
-                    progressRow.Status = "Complete";
+                    progressRow.Status = ProgressRow.StatusType.Complete;
 
                 }
-            }
+            }            
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                if (progressRow != null)
+                {
+                    progressRow.Status = ProgressRow.StatusType.Failed;
+                }
             }
 
         }
 
-        public void ChangeDirectory(string path)
+        public async void ChangeDirectory(string path)
         {
-            IAsyncResult sftp = Client.BeginListDirectory(path, AsyncListDirectoryCallback, null);
-            List<SftpFile> result = (List<SftpFile>)Client.EndListDirectory(sftp);
+            IAsyncResult result = Client.BeginListDirectory(path, AsyncListDirectoryCallback, null);
 
-            PopulateListView(result);
+            var files = await Task.Factory.FromAsync(result, Client.EndListDirectory);
+
+            PopulateListView((List<SftpFile>)files);
         }
 
         private void PopulateListView(List<SftpFile> results)
@@ -243,6 +278,11 @@ namespace mRemoteNG.UI.Window
                 if (file.Name == ".")
                 {
                     CurrentDirectory = file.FullName.Substring(0, file.FullName.LastIndexOf("/."));
+                }
+
+                if (string.IsNullOrEmpty(CurrentDirectory))
+                {
+                    CurrentDirectory = "/";
                 }
             }
 
@@ -269,10 +309,16 @@ namespace mRemoteNG.UI.Window
 
         public class ProgressRow : INotifyPropertyChanged
         {
-            private string _Status { get; set; }
+            public enum StatusType
+            {
+                Waiting,Downloading,Uploading,Canceled,Complete,Failed
+            }
+
+            private StatusType _Status { get; set; }
 
             public string Name { get; set; }
-            public string Status
+            public string Path { get; set; }
+            public StatusType Status
             {
                 get => this._Status;
                 set
@@ -289,9 +335,10 @@ namespace mRemoteNG.UI.Window
 
             public Image Icon { get; set; }
           
-            public ProgressRow(string Name, string Status, bool IsDownload = true)
+            public ProgressRow(string Path, StatusType Status, bool IsDownload = true)
             {
-                this.Name = Name;
+                this.Path = Path;
+                this.Name = Path.Substring(Path.LastIndexOf('\\') + 1);
                 this._Status = Status;
                 this.Icon = (IsDownload) ? Resources.Arrow_Down : Resources.Arrow_Up;
             }
@@ -314,15 +361,17 @@ namespace mRemoteNG.UI.Window
 
             public FileRow(SftpFile File)
             {
+
                 this.File = File;
 
                 this.Name = File.Name;
                 this.Size = (int)Math.Round(File.Attributes.Size / 1024f);
                 this.Modified = File.Attributes.LastWriteTime.ToString("yyyy-MM-dd hh:mm");
-              
-                this.Icon = (File.IsDirectory) ? Resources.Folder : Resources.File;
 
+                this.Icon = (File.IsDirectory) ? Resources.Folder : Resources.File;
             }
+
+         
         }
     }
 }

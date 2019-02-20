@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SFTPBrowserWindow));
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.newToolStripButton = new System.Windows.Forms.ToolStripButton();
@@ -68,6 +69,7 @@
             this.ngLabelPort = new mRemoteNG.UI.Controls.Base.NGLabel();
             this.ngTextBoxHost = new mRemoteNG.UI.Controls.Base.NGTextBox();
             this.ngLabelServer = new mRemoteNG.UI.Controls.Base.NGLabel();
+            this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.ngListViewFiles)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.ngListViewProgress)).BeginInit();
@@ -233,6 +235,7 @@
             // olvColumn2
             // 
             this.olvColumn2.AspectName = "Size";
+            this.olvColumn2.AspectToStringFormat = "{0:N0}";
             this.olvColumn2.Text = "Size (KB)";
             this.olvColumn2.Width = 106;
             // 
@@ -255,6 +258,7 @@
             // olvColumn6
             // 
             this.olvColumn6.AspectName = "Access";
+            this.olvColumn6.FillsFreeSpace = true;
             this.olvColumn6.Text = "Access";
             // 
             // ngListViewProgress
@@ -287,12 +291,14 @@
             // olvColumn_Status
             // 
             this.olvColumn_Status.AspectName = "Status";
+            this.olvColumn_Status.FillsFreeSpace = true;
             this.olvColumn_Status.Text = "Status";
             this.olvColumn_Status.Width = 99;
             // 
             // splitContainer1
             // 
             this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer1.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
             this.splitContainer1.Location = new System.Drawing.Point(0, 0);
             this.splitContainer1.Name = "splitContainer1";
             // 
@@ -492,14 +498,20 @@
             this.ngLabelServer.TabIndex = 0;
             this.ngLabelServer.Text = "Server";
             // 
+            // contextMenuStrip1
+            // 
+            this.contextMenuStrip1.Name = "contextMenuStrip1";
+            this.contextMenuStrip1.Size = new System.Drawing.Size(61, 4);
+            // 
             // SFTPBrowserWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(960, 441);
             this.Controls.Add(this.splitContainer1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "SFTPBrowserWindow";
-            this.Text = "SFTPBrowserWindow";
+            this.Text = "SFTP Browser";
             this.Load += new System.EventHandler(this.SFTPBrowserWindow_Load);
             this.toolStrip1.ResumeLayout(false);
             this.toolStrip1.PerformLayout();
@@ -565,5 +577,6 @@
         private Controls.Base.NGLabel ngLabel1;
         private BrightIdeasSoftware.OLVColumn olvColumn_Status;
         private System.Windows.Forms.SplitContainer splitContainer2;
+        private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
     }
 }

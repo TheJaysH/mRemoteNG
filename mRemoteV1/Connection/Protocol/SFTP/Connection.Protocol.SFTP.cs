@@ -3,14 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Renci.SshNet;
 
-namespace mRemoteNG.Tools
+namespace mRemoteNG.Connection.Protocol.SFTP
 {
-    class SFTPBrowser
+    class Connection : ProtocolBase
     {
-        public SFTPBrowser()
-        {
-        }
+
+
     }
 }
