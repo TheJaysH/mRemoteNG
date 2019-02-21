@@ -43,6 +43,8 @@ namespace mRemoteNG.UI.Window
 
         private string HomeDirectory { get => (Username == "root") ? "/root" : $"/home/{Username}"; }
 
+        private FileSystemWatcher Watcher { get; set; }
+
         public SftpClient Client { get; set; }
 
         public string CurrentDirectoryRemote
@@ -88,6 +90,28 @@ namespace mRemoteNG.UI.Window
             ngButtonBrowse.Click += NgButtonBrowse_Click;
 
             toolStripButtonCollapse.Click += ToolStripButtonCollapse_Click;
+
+            Watcher = new FileSystemWatcher();
+
+            Watcher.NotifyFilter = NotifyFilters.LastAccess
+                              | NotifyFilters.LastWrite
+                              | NotifyFilters.FileName
+                              | NotifyFilters.DirectoryName;
+
+            Watcher.Changed += Watcher_Changed;
+            Watcher.Created += Watcher_Changed;
+            Watcher.Deleted += Watcher_Changed;
+            Watcher.Renamed += Watcher_Renamed;
+        }
+
+        private void Watcher_Renamed(object sender, RenamedEventArgs e)
+        {
+            ChangeDirectoryLocal(CurrentDirectoryLocal);
+        }
+
+        private void Watcher_Changed(object sender, FileSystemEventArgs e)
+        {
+            ChangeDirectoryLocal(CurrentDirectoryLocal);
         }
 
         #region Methods
@@ -111,12 +135,19 @@ namespace mRemoteNG.UI.Window
 
             try
             {
+                Watcher.EnableRaisingEvents = false;
+
                 var dirs = dirInfo.EnumerateDirectories().AsParallel().Where(d => (d.Attributes & FileAttributes.Hidden) == 0 && (d.Attributes & FileAttributes.System) == 0).ToList();
                 var files = dirInfo.EnumerateFiles().AsParallel().Where(f => (f.Attributes & FileAttributes.Hidden) == 0 && (f.Attributes & FileAttributes.System) == 0).ToList();
 
                 CurrentDirectoryLocal = path;
 
+                Watcher.Path = CurrentDirectoryLocal;
+
                 PopulateListViewLocal(dirInfo, dirs, files);
+
+                Watcher.EnableRaisingEvents = true;
+
             }
             catch (UnauthorizedAccessException e)
             {
