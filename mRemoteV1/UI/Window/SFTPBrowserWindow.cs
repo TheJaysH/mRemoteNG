@@ -22,7 +22,6 @@ namespace mRemoteNG.UI.Window
     {
         /*
          *  TODO:
-         *      - File Upload
          *      - Drag & Drop (Upload/Download)
          *      - Port Logic into it's own class
          *      - Use Credential manager
@@ -74,15 +73,18 @@ namespace mRemoteNG.UI.Window
             ngListViewFilesRemote.DragEnter += NgListViewFilesRemote_DragEnter;
             ngListViewFilesRemote.CanDrop += NgListViewFilesRemote_CanDrop;
             ngListViewFilesRemote.Dropped += NgListViewFilesRemote_Dropped;
+            ngListViewFilesRemote.ModelCanDrop += NgListViewFilesRemote_ModelCanDrop;
 
             ngListViewFilesLocal.AllowDrop = true;
             ngListViewFilesLocal.IsSimpleDragSource = true;
             ngListViewFilesLocal.IsSimpleDropSink = true;
             ngListViewFilesLocal.DoubleClick += NgListViewFilesLocal_DoubleClick;
+            ngListViewFilesLocal.ModelCanDrop += NgListViewFilesLocal_ModelCanDrop;
+            ngListViewFilesLocal.ModelDropped += NgListViewFilesLocal_ModelDropped;
+
 
 
             ngListViewProgress.UseNotifyPropertyChanged = true;
-            ngListViewProgress.ModelCanDrop += NgListViewProgress_ModelCanDrop;
             ngListViewProgress.DoubleClick += NgListViewProgress_DoubleClick;
 
 
@@ -104,6 +106,135 @@ namespace mRemoteNG.UI.Window
             Watcher.Renamed += Watcher_Renamed;
         }
 
+        private void NgListViewFilesLocal_ModelDropped(object sender, ModelDropEventArgs e)
+        {
+            // If they didn't drop on anything, then don't do anything
+            if (e.TargetModel == null)
+                return;
+
+            var target = ((FileRow)e.TargetModel).File;
+            
+            //else
+            {
+                if (target.GetType() == typeof(DirectoryInfo))
+                {
+                    Debug.WriteLine("Dropped in DI: " + e.SourceModels[0]);
+
+                    var rows = e.SourceModels.Cast<FileRow>();
+                    foreach (var row in rows)
+                    {
+                        var file = (SftpFile)row.File;
+                        DownloadFile(file, ((DirectoryInfo)target).FullName);
+                    }
+
+                }
+                else if (target.GetType() == typeof(FileInfo))
+                {
+                    Debug.WriteLine("Dropped in FI: " + e.SourceModels[0]);
+                    var rows = e.SourceModels.Cast<FileRow>();
+                    foreach (var row in rows)
+                    {
+                        var file = (SftpFile)row.File;
+                        DownloadFile(file, CurrentDirectoryLocal);
+                    }
+                }
+            }
+            
+
+            //var source = ((FileRow)e.SourceModels).File;
+
+
+
+            //// Change the dropped people plus the target person to be married
+            //((Person)e.TargetModel).MaritalStatus = MaritalStatus.Married;
+            //foreach (Person p in e.SourceModels)
+            //    p.MaritalStatus = MaritalStatus.Married;
+
+            //// Force them to refresh
+            //e.RefreshObjects();
+        }
+
+        private void NgListViewFilesRemote_ModelCanDrop(object sender, ModelDropEventArgs e)
+        {
+            FileRow fileRow = (FileRow)e.TargetModel;
+
+
+            if (fileRow is null) return;
+
+            var source = e.SourceModels;
+
+
+            if (e.SourceListView == (ObjectListView)sender)
+            {
+                if (source.AsParallel().Cast<FileRow>().Count(s => ((SftpFile)s.File).IsDirectory) > 0)
+                {
+                    e.Handled = true;
+                    e.Effect = DragDropEffects.None;
+                    e.InfoMessage = "Can't download directories";
+                }
+                else
+                {
+                    if (fileRow.File.GetType() == typeof(SftpFile))
+                    {
+                        e.Effect = DragDropEffects.None;
+
+                    }
+                    else
+                    {
+                        e.Effect = DragDropEffects.Copy;
+
+                    }
+                }
+            }
+            else if (e.SourceListView == ngListViewFilesLocal)
+            {
+                e.Effect = DragDropEffects.Copy;
+            }
+
+
+
+
+
+
+        }
+
+        private void NgListViewFilesLocal_ModelCanDrop(object sender, ModelDropEventArgs e)
+        {
+            FileRow fileRow = (FileRow)e.TargetModel;
+
+            if (fileRow is null) return;
+
+
+            if (e.SourceListView == (ObjectListView)sender)
+            {
+
+            }
+            else if (e.SourceListView == ngListViewFilesRemote)
+            {
+                var source = e.SourceModels;
+
+                if (source.AsParallel().Cast<FileRow>().Count(s => ((SftpFile)s.File).IsDirectory) > 0)
+                {
+                    e.Effect = DragDropEffects.None;
+                    e.InfoMessage = "Can't download directories";
+                }
+                else
+                {
+                    if (fileRow.File.GetType() == typeof(DirectoryInfo))
+                    {
+                        e.Effect = DragDropEffects.Copy;
+                    }
+                    else if (fileRow.File.GetType() == typeof(FileInfo))
+                    {
+                        e.Effect = DragDropEffects.Copy;
+                    }
+                }
+            }
+
+           
+            
+        }
+
         private void Watcher_Renamed(object sender, RenamedEventArgs e)
         {
             ChangeDirectoryLocal(CurrentDirectoryLocal);
@@ -118,6 +249,8 @@ namespace mRemoteNG.UI.Window
 
         private bool CheckControls()
         {
+            // TODO Report a relevent error
+
             return (ngTextBoxHost.Text != string.Empty &&
             ngTextBoxUsername.Text != string.Empty &&
             ngTextBoxPassword.Text != string.Empty &&
@@ -204,8 +337,6 @@ namespace mRemoteNG.UI.Window
 
             ChangeDirectoryLocal(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
             ChangeDirectoryRemote(HomeDirectory);
-
-
         }
 
         public bool Connect()
@@ -232,9 +363,9 @@ namespace mRemoteNG.UI.Window
             });
         }
 
-        public async void UploadFile(FileInfo file)
+        public async void UploadFile(FileInfo file, string destDir)
         {
-            string dest = $"{CurrentDirectoryRemote}/{file.Name}";
+            string dest = $"{destDir}/{file.Name}";
             ProgressRow progressRow = null;
 
             using (FileStream SourceStream = File.Open(file.FullName, FileMode.Open, FileAccess.Read))
@@ -257,9 +388,9 @@ namespace mRemoteNG.UI.Window
         }
 
 
-        public async void DownloadFile(SftpFile file)
+        public async void DownloadFile(SftpFile file, string destDir)
         {
-            string dest = $"{CurrentDirectoryLocal}\\{file.Name}";
+            string dest = $"{destDir}\\{file.Name}";
             ProgressRow progressRow = null;
 
             try
@@ -423,7 +554,7 @@ namespace mRemoteNG.UI.Window
                 if (file.IsDirectory)
                     ChangeDirectoryRemote(file.FullName);
                 else
-                    DownloadFile(file);
+                    DownloadFile(file, CurrentDirectoryLocal);
             }
 
         }
@@ -496,7 +627,7 @@ namespace mRemoteNG.UI.Window
             else if (oRow.File.GetType() == typeof(FileInfo))
             {
                 FileInfo file = (FileInfo)oRow.File;
-                UploadFile(file);
+                UploadFile(file, CurrentDirectoryRemote);
             }
         }
 
@@ -570,7 +701,7 @@ namespace mRemoteNG.UI.Window
             }
         }
 
-        public class FileRow
+        public class FileRow : SimpleDropSink
         {  
             public string Name { get; set; }
             public int? Size { get; set; }
@@ -583,7 +714,7 @@ namespace mRemoteNG.UI.Window
             public FileRow(SftpFile File)
             {
                 this.File = File;
-
+                
                 this.Name = File.Name;
                 this.Size = (int)Math.Round(File.Attributes.Size / 1024f);
                 this.Modified = File.Attributes.LastWriteTime.ToString("yyyy-MM-dd hh:mm");
@@ -600,6 +731,9 @@ namespace mRemoteNG.UI.Window
                 this.Modified = File.LastWriteTime.ToString("yyyy-MM-dd hh:mm");
 
                 this.Icon = Resources.File;
+
+                this.CanDropBetween = true;
+                this.CanDropOnBackground = true;
             }
 
             public FileRow(DirectoryInfo Directory, bool IsSpecial = false, string SpecialName = "")
@@ -611,6 +745,9 @@ namespace mRemoteNG.UI.Window
                 this.Modified = (IsSpecial) ? string.Empty : Directory.LastWriteTime.ToString("yyyy-MM-dd hh:mm");
 
                 this.Icon = Resources.Folder;
+
+                this.CanDropBetween = false;
+                this.CanDropOnBackground = false;
             }
           
         }
