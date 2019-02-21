@@ -34,10 +34,10 @@ namespace mRemoteNG.UI.Window
          *      
          * */
 
-        private string Host { get => ngTextBoxHost.Text; }
-        private string Username { get => ngTextBoxUsername.Text; }
-        private string Password { get => ngTextBoxPassword.Text; }
-        private int Port { get => int.Parse(ngTextBoxPort.Text); }
+        public string Hostname { get => ngTextBoxHost.Text; set => ngTextBoxHost.Text = value; }
+        public string Username { get => ngTextBoxUsername.Text; set => ngTextBoxUsername.Text = value;  }
+        public string Password { get => ngTextBoxPassword.Text; set => ngTextBoxPassword.Text = value; }
+        public int Port { get => int.Parse(ngTextBoxPort.Text); set => ngTextBoxPort.Text = value.ToString(); }
 
         private string HomeDirectory { get => $"/home/{Username}"; }
 
@@ -64,16 +64,65 @@ namespace mRemoteNG.UI.Window
             ngListViewFiles.AllowDrop = true;
             ngListViewFiles.IsSimpleDragSource = true;
             ngListViewFiles.IsSimpleDropSink = true;
-            ngListViewProgress.UseNotifyPropertyChanged = true;
-
-            ngListViewProgress.ModelCanDrop += NgListViewProgress_ModelCanDrop;
             ngListViewFiles.DoubleClick += NgListViewFiles_DoubleClick;
+            ngListViewFiles.DragOver += NgListViewFiles_DragOver;
+            ngListViewFiles.DragDrop += NgListViewFiles_DragDrop;
+            ngListViewFiles.DragEnter += NgListViewFiles_DragEnter;
+            ngListViewFiles.CanDrop += NgListViewFiles_CanDrop;
+            ngListViewFiles.Dropped += NgListViewFiles_Dropped;
 
+            ngListViewProgress.UseNotifyPropertyChanged = true;
+            ngListViewProgress.ModelCanDrop += NgListViewProgress_ModelCanDrop;
             ngListViewProgress.DoubleClick += NgListViewProgress_DoubleClick;
 
             ngButtonConnect.Click += NgButtonConnect_Click;
             ngButtonBrowse.Click += NgButtonBrowse_Click;
+        }
 
+        private void NgListViewFiles_Dropped(object sender, OlvDropEventArgs e)
+        {
+            Debug.WriteLine(e.DataObject);
+        }
+
+        private void NgListViewFiles_CanDrop(object sender, OlvDropEventArgs e)
+        {
+            Debug.WriteLine(e.DataObject);
+        }
+
+        private void NgListViewFiles_DragEnter(object sender, DragEventArgs e)
+        {
+            e.Effect = DragDropEffects.Copy;
+        }
+
+        private void NgListViewFiles_DragDrop(object sender, DragEventArgs e)
+        {
+            ObjectListView objectList = (ObjectListView)sender;
+            FileRow oRow = (FileRow)objectList.SelectedItem.RowObject;
+
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                foreach (var file in files)
+                {
+
+                    if (oRow.File.IsDirectory)
+                    {
+                        Debug.WriteLine($"Write {file} => {oRow.File.FullName}");
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"Write {file} => {CurrentDirectory}");
+                    }
+
+                    //UploadFile(file, CurrentDirectory);
+                }
+            }
+        }
+
+        private void NgListViewFiles_DragOver(object sender, DragEventArgs e)
+        {
+            
         }
 
         private void NgListViewProgress_DoubleClick(object sender, EventArgs e)
@@ -122,23 +171,23 @@ namespace mRemoteNG.UI.Window
 
         private void NgListViewProgress_ModelCanDrop(object sender, ModelDropEventArgs e)
         {
-            FileRow fileRow = (FileRow)e.TargetModel;
-            if (fileRow == null)
-            {
-                e.Effect = DragDropEffects.None;
-            }
-            else
-            {
-                if (fileRow.File.IsDirectory)
-                {
-                    e.Effect = DragDropEffects.None;
-                    e.InfoMessage = "Can't download a directory";
-                }
-                else
-                {
-                    e.Effect = DragDropEffects.Move;
-                }
-            }
+            //FileRow fileRow = (FileRow)e.TargetModel;
+            //if (fileRow == null)
+            //{
+            //    e.Effect = DragDropEffects.None;
+            //}
+            //else
+            //{
+            //    if (fileRow.File.IsDirectory)
+            //    {
+            //        e.Effect = DragDropEffects.None;
+            //        e.InfoMessage = "Can't download a directory";
+            //    }
+            //    else
+            //    {
+            //        e.Effect = DragDropEffects.Move;
+            //    }
+            //}
         }
 
         private void NgButtonBrowse_Click(object sender, EventArgs e)
@@ -176,13 +225,18 @@ namespace mRemoteNG.UI.Window
 
         }
 
-        private void NgButtonConnect_Click(object sender, EventArgs e)
+        public void ConnectAndBrowse()
         {
             if (!CheckControls()) return;
 
             if (!Connect()) return;
 
             ChangeDirectory(HomeDirectory);
+        }
+
+        private void NgButtonConnect_Click(object sender, EventArgs e)
+        {
+            ConnectAndBrowse();
         }
 
         #endregion
@@ -207,7 +261,7 @@ namespace mRemoteNG.UI.Window
 
         public ConnectionInfo GetConnectionInfo()
         {
-            return new ConnectionInfo(Host, Port, Username, new AuthenticationMethod[]{
+            return new ConnectionInfo(Hostname, Port, Username, new AuthenticationMethod[]{
                 new PasswordAuthenticationMethod(Username,Password)
             });
         }

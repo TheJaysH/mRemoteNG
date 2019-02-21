@@ -28,6 +28,7 @@ namespace mRemoteNG.UI.Controls
         private ToolStripMenuItem _cMenTreeDisconnect;
         private ToolStripSeparator _cMenTreeSep2;
         private ToolStripMenuItem _cMenTreeToolsTransferFile;
+        private ToolStripMenuItem _cMenTreeToolsBrowseSftp;
         private ToolStripMenuItem _cMenTreeToolsSort;
         private ToolStripMenuItem _cMenTreeToolsSortAscending;
         private ToolStripMenuItem _cMenTreeToolsSortDescending;
@@ -85,6 +86,7 @@ namespace mRemoteNG.UI.Controls
             _cMenTreeSep1 = new ToolStripSeparator();
             _cMenTreeToolsExternalApps = new ToolStripMenuItem();
             _cMenTreeToolsTransferFile = new ToolStripMenuItem();
+            _cMenTreeToolsBrowseSftp = new ToolStripMenuItem();
             _cMenTreeSep2 = new ToolStripSeparator();
             _cMenTreeDuplicate = new ToolStripMenuItem();
             _cMenTreeRename = new ToolStripMenuItem();
@@ -120,6 +122,7 @@ namespace mRemoteNG.UI.Controls
                 _cMenTreeSep1,
                 _cMenTreeToolsExternalApps,
                 _cMenTreeToolsTransferFile,
+                _cMenTreeToolsBrowseSftp,
                 _cMenTreeSep2,
                 _cMenTreeDuplicate,
                 _cMenTreeRename,
@@ -233,6 +236,14 @@ namespace mRemoteNG.UI.Controls
             _cMenTreeToolsTransferFile.Size = new System.Drawing.Size(199, 22);
             _cMenTreeToolsTransferFile.Text = "Transfer File (SSH)";
             _cMenTreeToolsTransferFile.Click += OnTransferFileClicked;
+            // 
+            // cMenTreeToolsBrowseSftp
+            // 
+            _cMenTreeToolsBrowseSftp.Image = Resources.Folder;
+            _cMenTreeToolsBrowseSftp.Name = "_cMenTreeToolsBrowseSftp";
+            _cMenTreeToolsBrowseSftp.Size = new System.Drawing.Size(199, 22);
+            _cMenTreeToolsBrowseSftp.Text = "Browse SFTP";
+            _cMenTreeToolsBrowseSftp.Click += OnBrowseSftpClicked;
             // 
             // cMenTreeSep2
             // 
@@ -385,6 +396,8 @@ namespace mRemoteNG.UI.Controls
             _cMenTreeMoveDown.Click += OnMoveDownClicked;
         }
 
+      
+
         private void ApplyLanguage()
         {
             _cMenTreeConnect.Text = Language.strConnect;
@@ -399,6 +412,7 @@ namespace mRemoteNG.UI.Controls
 
             _cMenTreeToolsExternalApps.Text = Language.strMenuExternalTools;
             _cMenTreeToolsTransferFile.Text = Language.strMenuTransferFile;
+            //_cMenTreeToolsBrowseSftp.Text = //
 
             _cMenTreeDuplicate.Text = Language.strDuplicate;
             _cMenTreeRename.Text = Language.strRename;
@@ -464,6 +478,7 @@ namespace mRemoteNG.UI.Controls
             _cMenTreeConnectWithOptions.Enabled = false;
             _cMenTreeDisconnect.Enabled = false;
             _cMenTreeToolsTransferFile.Enabled = false;
+            _cMenTreeToolsBrowseSftp.Enabled = false;
             _cMenTreeConnectWithOptions.Enabled = false;
             _cMenTreeToolsSort.Enabled = false;
             _cMenTreeToolsExternalApps.Enabled = false;
@@ -485,6 +500,7 @@ namespace mRemoteNG.UI.Controls
             _cMenTreeConnectWithOptionsChoosePanelBeforeConnecting.Enabled = false;
             _cMenTreeDisconnect.Enabled = false;
             _cMenTreeToolsTransferFile.Enabled = false;
+            _cMenTreeToolsBrowseSftp.Enabled = false;
             _cMenTreeToolsExternalApps.Enabled = false;
             _cMenTreeDuplicate.Enabled = false;
             _cMenTreeDelete.Enabled = false;
@@ -503,6 +519,7 @@ namespace mRemoteNG.UI.Controls
                 _cMenTreeDisconnect.Enabled = true;
 
             _cMenTreeToolsTransferFile.Enabled = false;
+            _cMenTreeToolsBrowseSftp.Enabled = false;
             _cMenTreeToolsExternalApps.Enabled = false;
         }
 
@@ -515,7 +532,10 @@ namespace mRemoteNG.UI.Controls
                 _cMenTreeDisconnect.Enabled = false;
 
             if (!(connectionInfo.Protocol == ProtocolType.SSH1 | connectionInfo.Protocol == ProtocolType.SSH2))
+            {
                 _cMenTreeToolsTransferFile.Enabled = false;
+                _cMenTreeToolsBrowseSftp.Enabled = false;
+            }
 
             _cMenTreeConnectWithOptionsConnectInFullscreen.Enabled = false;
             _cMenTreeConnectWithOptionsConnectToConsoleSession.Enabled = false;
@@ -535,7 +555,10 @@ namespace mRemoteNG.UI.Controls
                 _cMenTreeDisconnect.Enabled = false;
 
             if (!(connectionInfo.Protocol == ProtocolType.SSH1 | connectionInfo.Protocol == ProtocolType.SSH2))
+            {
                 _cMenTreeToolsTransferFile.Enabled = false;
+                _cMenTreeToolsBrowseSftp.Enabled = false;
+            }
 
             if (!(connectionInfo.Protocol == ProtocolType.RDP | connectionInfo.Protocol == ProtocolType.ICA))
             {
@@ -728,6 +751,8 @@ namespace mRemoteNG.UI.Controls
             }
         }
 
+
+
         private void OnTransferFileClicked(object sender, EventArgs e)
         {
             SshTransferFile();
@@ -747,6 +772,30 @@ namespace mRemoteNG.UI.Controls
             {
                 Runtime.MessageCollector.AddExceptionStackTrace(
                                                                 "SSHTransferFile (UI.Window.ConnectionTreeWindow) failed",
+                                                                ex);
+            }
+        }
+
+        private void OnBrowseSftpClicked(object sender, EventArgs e)
+        {
+            SftpBrowse();
+        }
+
+        public void SftpBrowse()
+        {
+            try
+            {
+                Windows.Show(WindowType.SFTPBrowser);
+                Windows.SFTPBrowserForm.Hostname = _connectionTree.SelectedNode.Hostname;
+                Windows.SFTPBrowserForm.Username = _connectionTree.SelectedNode.Username;
+                Windows.SFTPBrowserForm.Password = _connectionTree.SelectedNode.Password;
+                Windows.SFTPBrowserForm.Port = _connectionTree.SelectedNode.Port;
+                Windows.SFTPBrowserForm.ConnectAndBrowse();
+            }
+            catch (Exception ex)
+            {
+                Runtime.MessageCollector.AddExceptionStackTrace(
+                                                                "SFTP Browser (UI.Window.ConnectionTreeWindow) failed",
                                                                 ex);
             }
         }
