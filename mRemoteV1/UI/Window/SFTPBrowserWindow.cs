@@ -14,6 +14,7 @@ using System.Windows.Forms;
 using BrightIdeasSoftware;
 using Renci.SshNet;
 using Renci.SshNet.Sftp;
+using System.Text.RegularExpressions;
 
 namespace mRemoteNG.UI.Window
 {
@@ -28,6 +29,7 @@ namespace mRemoteNG.UI.Window
          *      - Add support for KeyAuth
          *      - Conext Menu's
          *      - Overwrite dialog (kinda done)
+         *      - Sanity checks
          *
          *  BONUS:
          *      - Report Download/Upload Progress %
@@ -39,20 +41,20 @@ namespace mRemoteNG.UI.Window
         public string Password { get => ngTextBoxPassword.Text; set => ngTextBoxPassword.Text = value; }
         public int Port { get => int.Parse(ngTextBoxPort.Text); set => ngTextBoxPort.Text = value.ToString(); }
 
-        private string HomeDirectory { get => $"/home/{Username}"; }
+        private string HomeDirectory { get => (Username == "root") ? "/root" : $"/home/{Username}"; }
 
         public SftpClient Client { get; set; }
 
-        public string CurrentDirectory
+        public string CurrentDirectoryRemote
         {
-            get => ngTextBoxCurrentDirectory.Text;
-            set => ngTextBoxCurrentDirectory.Text = value;
+            get => ngTextBoxCurrentDirectoryRemote.Text;
+            set => ngTextBoxCurrentDirectoryRemote.Text = value;
         }
 
-        public string LocalDirectory
+        public string CurrentDirectoryLocal
         {
-            get => ngTextBoxLocalDirectory.Text;
-            set => ngTextBoxLocalDirectory.Text = value;
+            get => ngTextBoxCurrentDirectoryLocal.Text;
+            set => ngTextBoxCurrentDirectoryLocal.Text = value;
         }
 
         public SFTPBrowserWindow()
@@ -61,95 +63,41 @@ namespace mRemoteNG.UI.Window
 
             AllowDrop = true;
        
-            ngListViewFiles.AllowDrop = true;
-            ngListViewFiles.IsSimpleDragSource = true;
-            ngListViewFiles.IsSimpleDropSink = true;
-            ngListViewFiles.DoubleClick += NgListViewFiles_DoubleClick;
-            ngListViewFiles.DragOver += NgListViewFiles_DragOver;
-            ngListViewFiles.DragDrop += NgListViewFiles_DragDrop;
-            ngListViewFiles.DragEnter += NgListViewFiles_DragEnter;
-            ngListViewFiles.CanDrop += NgListViewFiles_CanDrop;
-            ngListViewFiles.Dropped += NgListViewFiles_Dropped;
+            ngListViewFilesRemote.AllowDrop = true;
+            ngListViewFilesRemote.IsSimpleDragSource = true;
+            ngListViewFilesRemote.IsSimpleDropSink = true;
+            ngListViewFilesRemote.DoubleClick += NgListViewFilesRemote_DoubleClick;
+            ngListViewFilesRemote.DragOver += NgListViewFilesRemote_DragOver;
+            ngListViewFilesRemote.DragDrop += NgListViewFilesRemote_DragDrop;
+            ngListViewFilesRemote.DragEnter += NgListViewFilesRemote_DragEnter;
+            ngListViewFilesRemote.CanDrop += NgListViewFilesRemote_CanDrop;
+            ngListViewFilesRemote.Dropped += NgListViewFilesRemote_Dropped;
+
+            ngListViewFilesLocal.AllowDrop = true;
+            ngListViewFilesLocal.IsSimpleDragSource = true;
+            ngListViewFilesLocal.IsSimpleDropSink = true;
+            ngListViewFilesLocal.DoubleClick += NgListViewFilesLocal_DoubleClick;
+
 
             ngListViewProgress.UseNotifyPropertyChanged = true;
             ngListViewProgress.ModelCanDrop += NgListViewProgress_ModelCanDrop;
             ngListViewProgress.DoubleClick += NgListViewProgress_DoubleClick;
 
+
             ngButtonConnect.Click += NgButtonConnect_Click;
             ngButtonBrowse.Click += NgButtonBrowse_Click;
+
+            toolStripButtonCollapse.Click += ToolStripButtonCollapse_Click;
         }
 
-        private void NgListViewFiles_Dropped(object sender, OlvDropEventArgs e)
-        {
-            Debug.WriteLine(e.DataObject);
-        }
-
-        private void NgListViewFiles_CanDrop(object sender, OlvDropEventArgs e)
-        {
-            Debug.WriteLine(e.DataObject);
-        }
-
-        private void NgListViewFiles_DragEnter(object sender, DragEventArgs e)
-        {
-            e.Effect = DragDropEffects.Copy;
-        }
-
-        private void NgListViewFiles_DragDrop(object sender, DragEventArgs e)
-        {
-            ObjectListView objectList = (ObjectListView)sender;
-            FileRow oRow = (FileRow)objectList.SelectedItem.RowObject;
-
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-
-                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                foreach (var file in files)
-                {
-
-                    if (oRow.File.IsDirectory)
-                    {
-                        Debug.WriteLine($"Write {file} => {oRow.File.FullName}");
-                    }
-                    else
-                    {
-                        Debug.WriteLine($"Write {file} => {CurrentDirectory}");
-                    }
-
-                    //UploadFile(file, CurrentDirectory);
-                }
-            }
-        }
-
-        private void NgListViewFiles_DragOver(object sender, DragEventArgs e)
-        {
-            
-        }
-
-        private void NgListViewProgress_DoubleClick(object sender, EventArgs e)
-        {
-            ObjectListView objectList = (ObjectListView)sender;
-
-            ProgressRow oRow = (ProgressRow)objectList.SelectedItem.RowObject;
-
-            if (!File.Exists(oRow.Path)) return;
-
-            try
-            {
-                Process.Start(oRow.Path);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Failed to open file. " + ex.Message,
-                      "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        #region Misc Methods
+        #region Methods
 
         private bool CheckControls()
         {
-            // TODO Check each of the controls
-            return true;
+            return (ngTextBoxHost.Text != string.Empty &&
+            ngTextBoxUsername.Text != string.Empty &&
+            ngTextBoxPassword.Text != string.Empty &&
+            Regex.IsMatch(ngTextBoxPort.Text, @"^(\d?)+$"));
         }
 
         private void ApplyLanguage()
@@ -157,91 +105,78 @@ namespace mRemoteNG.UI.Window
             // TODO
         }
 
-        #endregion
-
-        #region Form Events
-
-        private void SFTPBrowserWindow_Load(object sender, EventArgs e)
+        public void ChangeDirectoryLocal(string path)
         {
-            ApplyTheme();
-            ApplyLanguage();
-            var display = new DisplayProperties();
-        }
+            var dirInfo = new DirectoryInfo(path);
 
-
-        private void NgListViewProgress_ModelCanDrop(object sender, ModelDropEventArgs e)
-        {
-            //FileRow fileRow = (FileRow)e.TargetModel;
-            //if (fileRow == null)
-            //{
-            //    e.Effect = DragDropEffects.None;
-            //}
-            //else
-            //{
-            //    if (fileRow.File.IsDirectory)
-            //    {
-            //        e.Effect = DragDropEffects.None;
-            //        e.InfoMessage = "Can't download a directory";
-            //    }
-            //    else
-            //    {
-            //        e.Effect = DragDropEffects.Move;
-            //    }
-            //}
-        }
-
-        private void NgButtonBrowse_Click(object sender, EventArgs e)
-        {
-            using (var browser = new FolderBrowserDialog())
+            try
             {
-                DialogResult result = browser.ShowDialog();
+                var dirs = dirInfo.EnumerateDirectories().AsParallel().Where(d => (d.Attributes & FileAttributes.Hidden) == 0 && (d.Attributes & FileAttributes.System) == 0).ToList();
+                var files = dirInfo.EnumerateFiles().AsParallel().Where(f => (f.Attributes & FileAttributes.Hidden) == 0 && (f.Attributes & FileAttributes.System) == 0).ToList();
 
-                if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(browser.SelectedPath))
-                {
-                    LocalDirectory = browser.SelectedPath;
-                }
+                CurrentDirectoryLocal = path;
+
+                PopulateListViewLocal(dirInfo, dirs, files);
             }
-        }
-
-
-        private void NgListViewFiles_DoubleClick(object sender, EventArgs e)
-        {
-            ObjectListView objectList = (ObjectListView)sender;
-
-            FileRow oRow = (FileRow)objectList.SelectedItem.RowObject;
-
-            if (!oRow.File.OthersCanRead)
+            catch (UnauthorizedAccessException e)
             {
-                MessageBox.Show("You have insufficient permissions",
+                MessageBox.Show(e.Message,
                       "Warning", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
             }
-            else
+            catch (Exception e)
             {
-                if (oRow.File.IsDirectory)
-                    ChangeDirectory(oRow.File.FullName);
-                else
-                    DownloadFile(oRow.File);
+                MessageBox.Show($"An error occurred - {e.Message}",
+                      "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
         }
 
-        public void ConnectAndBrowse()
+        public void PopulateListViewLocal(DirectoryInfo currentDirectory, List<DirectoryInfo> directories, List<FileInfo> files)
+        {
+            List<FileRow> rows = new List<FileRow>();
+
+            FileRow currentDir = new FileRow(currentDirectory, true, ".");
+            FileRow parentDir = new FileRow(currentDirectory.Parent, true, "..");
+
+            rows.Add(currentDir);
+            rows.Add(parentDir);
+
+            foreach (var dir in directories)
+            {
+                FileRow fileRow = new FileRow(dir);
+                rows.Add(fileRow);
+            }
+
+            foreach (var file in files)
+            {
+                FileRow fileRow = new FileRow(file);
+                rows.Add(fileRow);
+            }
+
+            ngListViewFilesLocal.SetObjects(rows.OrderBy(r => r.Size).ToList());
+        }
+
+
+
+        private void ToggleConnectionInfo()
+        {
+            splitContainerMain.Panel1Collapsed = !splitContainerMain.Panel1Collapsed;
+        }
+
+        public void ConnectAndBrowse(bool collapse = false)
         {
             if (!CheckControls()) return;
 
             if (!Connect()) return;
 
-            ChangeDirectory(HomeDirectory);
+            if (!splitContainerMain.Panel1Collapsed) ToggleConnectionInfo();
+
+            ChangeDirectoryLocal(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+            ChangeDirectoryRemote(HomeDirectory);
+
+
         }
 
-        private void NgButtonConnect_Click(object sender, EventArgs e)
-        {
-            ConnectAndBrowse();
-        }
-
-        #endregion
-
-        #region SFTP Methods
         public bool Connect()
         {
             Client = new SftpClient(GetConnectionInfo());
@@ -266,9 +201,34 @@ namespace mRemoteNG.UI.Window
             });
         }
 
+        public async void UploadFile(FileInfo file)
+        {
+            string dest = $"{CurrentDirectoryRemote}/{file.Name}";
+            ProgressRow progressRow = null;
+
+            using (FileStream SourceStream = File.Open(file.FullName, FileMode.Open, FileAccess.Read))
+            {
+                progressRow = new ProgressRow(dest, ProgressRow.StatusType.Waiting, false);
+
+                ngListViewProgress.AddObject(progressRow);
+
+                IAsyncResult result = Client.BeginUploadFile(SourceStream, dest);
+
+                progressRow.Status = ProgressRow.StatusType.Uploading;
+
+                await Task.Factory.FromAsync(result, Client.EndUploadFile);
+
+                progressRow.Status = ProgressRow.StatusType.Complete;
+
+                ChangeDirectoryRemote(CurrentDirectoryRemote);
+            }
+
+        }
+
+
         public async void DownloadFile(SftpFile file)
         {
-            string dest = $"{LocalDirectory}\\{file.Name}";
+            string dest = $"{CurrentDirectoryLocal}\\{file.Name}";
             ProgressRow progressRow = null;
 
             try
@@ -311,16 +271,27 @@ namespace mRemoteNG.UI.Window
 
         }
 
-        public async void ChangeDirectory(string path)
+        public async void ChangeDirectoryRemote(string path)
         {
-            IAsyncResult result = Client.BeginListDirectory(path, AsyncListDirectoryCallback, null);
+            try
+            {
+                IAsyncResult result = Client.BeginListDirectory(path, AsyncListDirectoryCallback, null);
+                IEnumerable<SftpFile>  files = await Task.Factory.FromAsync(result, Client.EndListDirectory);
+                PopulateListViewRemote((List<SftpFile>)files);
+            }
+            catch (Renci.SshNet.Common.SftpPathNotFoundException e)
+            {
+                throw;
 
-            var files = await Task.Factory.FromAsync(result, Client.EndListDirectory);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
 
-            PopulateListView((List<SftpFile>)files);
         }
 
-        private void PopulateListView(List<SftpFile> results)
+        private void PopulateListViewRemote(List<SftpFile> results)
         {
             List<FileRow> rows = new List<FileRow>();
 
@@ -331,16 +302,16 @@ namespace mRemoteNG.UI.Window
 
                 if (file.Name == ".")
                 {
-                    CurrentDirectory = file.FullName.Substring(0, file.FullName.LastIndexOf("/."));
+                    CurrentDirectoryRemote = file.FullName.Substring(0, file.FullName.LastIndexOf("/."));
                 }
 
-                if (string.IsNullOrEmpty(CurrentDirectory))
+                if (string.IsNullOrEmpty(CurrentDirectoryRemote))
                 {
-                    CurrentDirectory = "/";
+                    CurrentDirectoryRemote = "/";
                 }
             }
 
-            ngListViewFiles.SetObjects(rows.OrderBy(r => r.Name));
+            ngListViewFilesRemote.SetObjects(rows.OrderBy(r => r.Name));
         }
 
         #region Async Callbacks
@@ -358,6 +329,171 @@ namespace mRemoteNG.UI.Window
 
 
         #endregion
+
+        #endregion
+
+        #region Form Events
+
+        private void SFTPBrowserWindow_Load(object sender, EventArgs e)
+        {
+            ApplyTheme();
+            ApplyLanguage();
+            var display = new DisplayProperties();
+        }
+
+        private void NgListViewProgress_ModelCanDrop(object sender, ModelDropEventArgs e)
+        {
+            //FileRow fileRow = (FileRow)e.TargetModel;
+            //if (fileRow == null)
+            //{
+            //    e.Effect = DragDropEffects.None;
+            //}
+            //else
+            //{
+            //    if (fileRow.File.IsDirectory)
+            //    {
+            //        e.Effect = DragDropEffects.None;
+            //        e.InfoMessage = "Can't download a directory";
+            //    }
+            //    else
+            //    {
+            //        e.Effect = DragDropEffects.Move;
+            //    }
+            //}
+        }
+
+        private void NgButtonBrowse_Click(object sender, EventArgs e)
+        {
+            using (var browser = new FolderBrowserDialog())
+            {
+                DialogResult result = browser.ShowDialog();
+
+                if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(browser.SelectedPath))
+                {
+                    CurrentDirectoryLocal = browser.SelectedPath;
+                }
+            }
+        }
+
+        private void NgListViewFilesRemote_DoubleClick(object sender, EventArgs e)
+        {
+            ObjectListView objectList = (ObjectListView)sender;
+
+            FileRow oRow = (FileRow)objectList.SelectedItem.RowObject;
+            SftpFile file = (SftpFile)oRow.File;
+
+            if (!file.OthersCanRead)
+            {
+                MessageBox.Show("You have insufficient permissions",
+                      "Warning", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+            }
+            else
+            {
+                if (file.IsDirectory)
+                    ChangeDirectoryRemote(file.FullName);
+                else
+                    DownloadFile(file);
+            }
+
+        }
+
+        private void NgListViewFilesRemote_Dropped(object sender, OlvDropEventArgs e)
+        {
+            Debug.WriteLine(e.DataObject);
+        }
+
+        private void NgListViewFilesRemote_CanDrop(object sender, OlvDropEventArgs e)
+        {
+            Debug.WriteLine(e.DataObject);
+        }
+
+        private void NgListViewFilesRemote_DragEnter(object sender, DragEventArgs e)
+        {
+            e.Effect = DragDropEffects.Copy;
+        }
+
+        private void NgListViewFilesRemote_DragDrop(object sender, DragEventArgs e)
+        {
+            ObjectListView objectList = (ObjectListView)sender;
+            FileRow oRow = (FileRow)objectList.SelectedItem.RowObject;
+            SftpFile ofile = (SftpFile)oRow.File;
+
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                foreach (var f in files)
+                {
+
+                    if (ofile.IsDirectory)
+                    {
+                        Debug.WriteLine($"Write {f} => {ofile.FullName}");
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"Write {f} => {CurrentDirectoryRemote}");
+                    }
+
+                    //UploadFile(file, CurrentDirectoryRemote);
+                }
+            }
+        }
+
+        private void NgListViewFilesRemote_DragOver(object sender, DragEventArgs e)
+        {
+
+        }
+
+        private void NgButtonConnect_Click(object sender, EventArgs e)
+        {
+            ConnectAndBrowse();
+        }
+
+        private void NgListViewFilesLocal_DoubleClick(object sender, EventArgs e)
+        {
+            ObjectListView objectList = (ObjectListView)sender;
+
+            FileRow oRow = (FileRow)objectList.SelectedItem.RowObject;
+
+            if (oRow.File is null) return;
+
+            if (oRow.File.GetType() == typeof(DirectoryInfo))
+            {
+                DirectoryInfo directory = (DirectoryInfo)oRow.File;
+                ChangeDirectoryLocal(directory.FullName);
+            }
+            else if (oRow.File.GetType() == typeof(FileInfo))
+            {
+                FileInfo file = (FileInfo)oRow.File;
+                UploadFile(file);
+            }
+        }
+
+
+        private void ToolStripButtonCollapse_Click(object sender, EventArgs e)
+        {
+            ToggleConnectionInfo();
+        }
+
+        private void NgListViewProgress_DoubleClick(object sender, EventArgs e)
+        {
+            ObjectListView objectList = (ObjectListView)sender;
+
+            ProgressRow oRow = (ProgressRow)objectList.SelectedItem.RowObject;
+
+            if (!File.Exists(oRow.Path)) return;
+
+            try
+            {
+                Process.Start(oRow.Path);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to open file. " + ex.Message,
+                      "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
 
         #endregion
 
@@ -392,7 +528,7 @@ namespace mRemoteNG.UI.Window
             public ProgressRow(string Path, StatusType Status, bool IsDownload = true)
             {
                 this.Path = Path;
-                this.Name = Path.Substring(Path.LastIndexOf('\\') + 1);
+                this.Name = (IsDownload) ? Path.Substring(Path.LastIndexOf('\\') + 1) : Path.Substring(Path.LastIndexOf('/') + 1);
                 this._Status = Status;
                 this.Icon = (IsDownload) ? Resources.Arrow_Down : Resources.Arrow_Up;
             }
@@ -406,16 +542,15 @@ namespace mRemoteNG.UI.Window
         public class FileRow
         {  
             public string Name { get; set; }
-            public int Size { get; set; }
+            public int? Size { get; set; }
             public string Modified { get; set; }
 
-            public SftpFile File { get; set; }
+            public object File { get; set; }
 
             public Image Icon { get; set; }
 
             public FileRow(SftpFile File)
             {
-
                 this.File = File;
 
                 this.Name = File.Name;
@@ -425,7 +560,28 @@ namespace mRemoteNG.UI.Window
                 this.Icon = (File.IsDirectory) ? Resources.Folder : Resources.File;
             }
 
-         
+            public FileRow(FileInfo File)
+            {
+                this.File = File;
+
+                this.Name = File.Name;
+                this.Size = (int)Math.Round(File.Length / 1024f);
+                this.Modified = File.LastWriteTime.ToString("yyyy-MM-dd hh:mm");
+
+                this.Icon = Resources.File;
+            }
+
+            public FileRow(DirectoryInfo Directory, bool IsSpecial = false, string SpecialName = "")
+            {
+                this.File = Directory;
+                
+                this.Name = (IsSpecial) ? SpecialName : Directory.Name;
+                this.Size = null;
+                this.Modified = (IsSpecial) ? string.Empty : Directory.LastWriteTime.ToString("yyyy-MM-dd hh:mm");
+
+                this.Icon = Resources.Folder;
+            }
+          
         }
     }
 }
